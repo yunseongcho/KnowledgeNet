@@ -198,13 +198,17 @@ for main_paper_name in main_paper_names:
 
     # merge main and supple papers
     if os.path.exists(supple_path):
-        merger = PdfMerger()
-        merger.append(main_path)
-        merger.append(supple_path)
+        try:
+            merger = PdfMerger()
+            merger.append(main_path)
+            merger.append(supple_path)
 
-        with open(os.path.join(output_file_root, f"{file_name}.pdf"), "wb") as output_pdf:
-            merger.write(output_pdf)
-        merger.close()
+            with open(os.path.join(output_file_root, f"{file_name}.pdf"), "wb") as output_pdf:
+                merger.write(output_pdf)
+            merger.close()
+        except:
+            with open("./pdf_merge_error.txt", "a", encoding="utf-8") as f:
+                f.write(f"{file_name}\n")
     else:
         shutil.copy(main_path, os.path.join(output_file_root, f"{file_name}.pdf"))
 
