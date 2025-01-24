@@ -1,0 +1,7 @@
+*.env
+*.ipynb
+*.pyc
+.vscode
+test/
+*.DS_Store
+prompts/origin.txt

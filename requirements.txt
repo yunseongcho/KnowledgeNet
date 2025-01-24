@@ -1,0 +1,4 @@
+pylint-pydantic==0.3.5
+python-dotenv==1.0.1
+pypdf2==3.0.1
+google-generativeai==0.8.4
