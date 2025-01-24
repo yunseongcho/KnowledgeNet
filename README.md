@@ -86,7 +86,8 @@ python main.py --formatted_file_name --equation_color "orange"
 
 ## License
 
-[Specify the license under which the project is distributed]
+CC BY-NC-ND 4.0
+
 
 ## Contact
 
