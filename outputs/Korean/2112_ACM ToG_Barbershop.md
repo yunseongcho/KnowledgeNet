@@ -12,7 +12,7 @@ Understanding Complete:
 Summary Complete: 
 ---
 # Files
-![[2112_ACM ToG_Barbershop.pdf]]
+![[../Files/2112_ACM ToG_Barbershop.pdf]]
 # Main Paper
 ## Paper Summary
 >[!question]
