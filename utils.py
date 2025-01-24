@@ -36,6 +36,7 @@ def replace_equation(txt: str, color: str = "") -> str:
         txt = txt.replace("\\)", "$ ")
         txt = txt.replace("\\[", f"$${color}")
         txt = txt.replace("\\]", "$$")
+        txt = txt.replace("**ANSWER**", "")
         return txt
     else:
         txt = txt.replace("\\( ", "$")
@@ -44,6 +45,7 @@ def replace_equation(txt: str, color: str = "") -> str:
         txt = txt.replace("\\)", "$ ")
         txt = txt.replace("\\[", "$$")
         txt = txt.replace("\\]", "$$")
+        txt = txt.replace("**ANSWER**", "")
         return txt
 
 
