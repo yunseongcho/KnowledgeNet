@@ -5,3 +5,4 @@
 *.DS_Store
 prompts/origin.txt
 outputs/.obsidian/
+logs/

@@ -60,6 +60,7 @@ output_file_root = os.path.join(args.outputs_root, "Files")
 os.makedirs(output_en_root, exist_ok=True)
 os.makedirs(output_ko_root, exist_ok=True)
 os.makedirs(output_file_root, exist_ok=True)
+os.makedirs("./logs", exist_ok=True)
 
 # check prompts format
 split_history_nums = check_prompts_format_equal(main_prompts_ko, main_prompts_en)
@@ -141,24 +142,31 @@ for main_paper_name in main_paper_names:
         chat_session = explainer.start_chat(history=history)
         answer_en_origin = get_answer_from_chat(chat_session, question)
 
-        # append history (append answer to chat)
-        history = append_history(history, question, "user")
-        history = append_history(history, answer_en_origin, "model")
+        # check if the answer is recitation
+        if answer_en_origin == "RECITATION":
+            with open("./logs/recitation_error.txt", "a", encoding="utf-8") as f:
+                f.write(f"{file_name}  {identifier_main}\n")
+                f.write(f"{question}\n")
+                f.write("--------------------\n")
+        else:
+            # append history (append answer to chat)
+            history = append_history(history, question, "user")
+            history = append_history(history, answer_en_origin, "model")
 
-        # replace answer in result_en
-        answer_en = replace_equation(answer_en_origin, args.equation_color)
-        result_en = result_en.replace(identifier_main, answer_en)
-        with open(os.path.join(output_en_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
-            output_file.write(result_en)
+            # replace answer in result_en
+            answer_en = replace_equation(answer_en_origin, args.equation_color)
+            result_en = result_en.replace(identifier_main, answer_en)
+            with open(os.path.join(output_en_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
+                output_file.write(result_en)
 
-        # ask translator
-        answer_ko = get_answer_from_model(translator, answer_en_origin)
+            # ask translator
+            answer_ko = get_answer_from_model(translator, answer_en_origin)
 
-        # replace answer in result_ko
-        answer_ko = replace_equation(answer_ko, args.equation_color)
-        result_ko = result_ko.replace(identifier_main, answer_ko)
-        with open(os.path.join(output_ko_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
-            output_file.write(result_ko)
+            # replace answer in result_ko
+            answer_ko = replace_equation(answer_ko, args.equation_color)
+            result_ko = result_ko.replace(identifier_main, answer_ko)
+            with open(os.path.join(output_ko_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
+                output_file.write(result_ko)
 
     genai.delete_file(main_file.name)
 
@@ -175,24 +183,31 @@ for main_paper_name in main_paper_names:
             chat_session = explainer.start_chat(history=history)
             answer_en_origin = get_answer_from_chat(chat_session, question)
 
-            # append history (append answer to chat)
-            history = append_history(history, question, "user")
-            history = append_history(history, answer_en_origin, "model")
+            # check if the answer is recitation
+            if answer_en_origin == "RECITATION":
+                with open("./logs/recitation_error.txt", "a", encoding="utf-8") as f:
+                    f.write(f"{file_name}  {identifier_supple}\n")
+                    f.write(f"{question}\n")
+                    f.write("--------------------\n")
+            else:
+                # append history (append answer to chat)
+                history = append_history(history, question, "user")
+                history = append_history(history, answer_en_origin, "model")
 
-            # replace answer in result_en
-            answer_en = replace_equation(answer_en_origin, args.equation_color)
-            result_en = result_en.replace(identifier_supple, answer_en)
-            with open(os.path.join(output_en_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
-                output_file.write(result_en)
+                # replace answer in result_en
+                answer_en = replace_equation(answer_en_origin, args.equation_color)
+                result_en = result_en.replace(identifier_supple, answer_en)
+                with open(os.path.join(output_en_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
+                    output_file.write(result_en)
 
-            # ask translator
-            answer_ko = get_answer_from_model(translator, answer_en_origin)
+                # ask translator
+                answer_ko = get_answer_from_model(translator, answer_en_origin)
 
-            # replace answer in result_ko
-            answer_ko = replace_equation(answer_ko, args.equation_color)
-            result_ko = result_ko.replace(identifier_supple, answer_ko)
-            with open(os.path.join(output_ko_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
-                output_file.write(result_ko)
+                # replace answer in result_ko
+                answer_ko = replace_equation(answer_ko, args.equation_color)
+                result_ko = result_ko.replace(identifier_supple, answer_ko)
+                with open(os.path.join(output_ko_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
+                    output_file.write(result_ko)
 
         genai.delete_file(supple_file.name)
 
@@ -206,8 +221,8 @@ for main_paper_name in main_paper_names:
             with open(os.path.join(output_file_root, f"{file_name}.pdf"), "wb") as output_pdf:
                 merger.write(output_pdf)
             merger.close()
-        except:
-            with open("./pdf_merge_error.txt", "a", encoding="utf-8") as f:
+        except Exception as e:
+            with open("./logs/pdf_merge_error.txt", "a", encoding="utf-8") as f:
                 f.write(f"{file_name}\n")
     else:
         shutil.copy(main_path, os.path.join(output_file_root, f"{file_name}.pdf"))

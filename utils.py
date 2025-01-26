@@ -169,7 +169,10 @@ def get_answer_from_chat(chat_session, query: str, threshold_num: int = 5) -> st
         except Exception as e:
             i += 1
             if i > threshold_num:
-                raise ValueError(f"run failed {query} {e}") from e
+                if "RECITATION" in str(e):
+                    return "RECITATION"
+                else:
+                    raise ValueError(f"run failed {query} {e}") from e
             continue
 
     return response.text
