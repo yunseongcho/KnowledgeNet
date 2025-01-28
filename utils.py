@@ -167,6 +167,7 @@ def get_answer_from_chat(chat_session, query: str, threshold_num: int = 5) -> st
             response = chat_session.send_message(query)
             break
         except Exception as e:
+            time.sleep(30)
             i += 1
             if i > threshold_num:
                 if "RECITATION" in str(e):
@@ -185,6 +186,7 @@ def get_answer_from_model(model, query: str, threshold_num: int = 5) -> str:
             response = model.generate_content(query)
             break
         except Exception as e:
+            time.sleep(30)
             i += 1
             if i > threshold_num:
                 raise ValueError(f"run failed translate {e}") from e
