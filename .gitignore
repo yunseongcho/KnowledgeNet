@@ -6,3 +6,4 @@
 prompts/origin.txt
 outputs/.obsidian/
 logs/
+*.toml
