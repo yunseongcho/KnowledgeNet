@@ -28,7 +28,7 @@ from utils import (
 
 # Load configs
 parser = argparse.ArgumentParser(description="explain and translate papers")
-parser.add_argument("--configs_path", type=str, default="./configs/gemini-2.0-flash-exp.json", help="configs_path")
+parser.add_argument("--configs_path", type=str, default="./configs/gemini-2.0-flash.json", help="configs_path")
 parser.add_argument("--inputs_root", type=str, default="./inputs", help="root folder of the input pdf files")
 parser.add_argument("--outputs_root", type=str, default="./outputs", help="root folder of the input pdf files")
 parser.add_argument("--format_path", type=str, default="./format.md", help="format markdown file")
@@ -84,7 +84,7 @@ main_paper_names.sort()
 
 # paper's loop
 for main_paper_name in main_paper_names:
-    file_name = main_paper_name.split(".")[0]
+    file_name = main_paper_name[:-4]
 
     # Load main and supple papers
     main_path = os.path.join(main_root, main_paper_name)
