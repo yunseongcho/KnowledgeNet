@@ -2,6 +2,7 @@
 *.ipynb
 *.pyc
 .vscode
+.venv
 *.DS_Store
 prompts/origin.txt
 outputs/.obsidian/

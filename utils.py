@@ -2,7 +2,10 @@
 
 import time
 from datetime import datetime
-import google.generativeai as genai
+from google import genai
+from google.genai import types
+
+from prompts.instructions import translator_instructions
 
 
 def replace_info(txt: str, file_name: str, file, formatted_file_name: bool = False) -> str:
@@ -117,8 +120,9 @@ def process_prompts(
     return result.strip(), question_dict
 
 
+"""
 def upload_file(title: str, file_path: str):
-    """Upload the given file to Gemini AI and wait for it to process.
+    Upload the given file to Gemini AI and wait for it to process.
 
     Args:
         title (str): paper title
@@ -126,7 +130,7 @@ def upload_file(title: str, file_path: str):
 
     Returns:
         file
-    """
+    
 
     file = genai.upload_file(file_path, mime_type="application/pdf", display_name=title)
     file = genai.get_file(file.name)
@@ -138,6 +142,7 @@ def upload_file(title: str, file_path: str):
         raise ValueError(f"File {file.name} failed to process")
 
     return file
+"""
 
 
 def make_history(file) -> list:
@@ -179,11 +184,22 @@ def get_answer_from_chat(chat_session, query: str, threshold_num: int = 5) -> st
     return response.text
 
 
-def get_answer_from_model(model, query: str, threshold_num: int = 5) -> str:
+def get_answer_from_model(client: genai.Client, query: str, configs: dict, threshold_num: int = 5) -> str:
     i = 0
     while True:
         try:
-            response = model.generate_content(query)
+            response = client.models.generate_content(
+                model=configs["Translator"]["model_name"],
+                contents=query,
+                config=types.GenerateContentConfig(
+                    system_instruction=translator_instructions,
+                    temperature=configs["Translator"]["configs"]["temperature"],
+                    top_p=configs["Translator"]["configs"]["top_p"],
+                    top_k=configs["Translator"]["configs"]["top_k"],
+                    max_output_tokens=configs["Translator"]["configs"]["max_output_tokens"],
+                    response_mime_type=configs["Translator"]["configs"]["response_mime_type"],
+                ),
+            )
             break
         except Exception as e:
             time.sleep(30)
