@@ -27,7 +27,7 @@ from utils import (
 
 # Load configs
 parser = argparse.ArgumentParser(description="explain and translate papers")
-parser.add_argument("--configs_path", type=str, default="./configs/gemini-2.0-flash.json", help="configs_path")
+parser.add_argument("--configs_path", type=str, default="./configs/gemini-3-flash-preview.json", help="configs_path")
 parser.add_argument("--inputs_root", type=str, default="./inputs", help="root folder of the input pdf files")
 parser.add_argument("--outputs_root", type=str, default="./outputs", help="root folder of the input pdf files")
 parser.add_argument("--format_path", type=str, default="./format.md", help="format markdown file")
@@ -170,7 +170,7 @@ for main_paper_name in main_paper_names:
             with open(os.path.join(output_ko_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
                 output_file.write(result_ko)
 
-    genai.delete_file(main_file.name)
+    client.files.delete(name=main_file.name)
 
     # if supple paper exists
     if os.path.exists(supple_path):
@@ -220,7 +220,7 @@ for main_paper_name in main_paper_names:
                 with open(os.path.join(output_ko_root, f"{file_name}.md"), "w", encoding="utf-8") as output_file:
                     output_file.write(result_ko)
 
-        genai.delete_file(supple_file.name)
+        client.files.delete(name=supple_file.name)
 
     # merge main and supple papers
     if os.path.exists(supple_path):
