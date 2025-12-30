@@ -145,26 +145,6 @@ def upload_file(title: str, file_path: str):
 """
 
 
-def make_history(file) -> list:
-    """Make history for chat
-
-    Args:
-        file: genai file object
-
-    Returns:
-        list: history list
-    """
-
-    history = [{"role": "user", "parts": [file]}]
-    return history
-
-
-def append_history(history: list, txt: str, role: str) -> list:
-    """append chat to history"""
-    history.append({"role": role, "parts": [txt]})
-    return history
-
-
 def get_answer_from_chat(chat_session, query: str, threshold_num: int = 5) -> str:
     i = 0
     while True:

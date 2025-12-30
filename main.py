@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from PyPDF2 import PdfMerger
@@ -19,8 +20,6 @@ from utils import (
     replace_equation,
     check_prompts_format_equal,
     process_prompts,
-    make_history,
-    append_history,
     get_answer_from_chat,
     get_answer_from_model,
 )
@@ -34,13 +33,16 @@ parser.add_argument("--outputs_root", type=str, default="./outputs", help="root 
 parser.add_argument("--format_path", type=str, default="./format.md", help="format markdown file")
 parser.add_argument("--formatted_file_name", action="store_true", help="Is the file name formatted? ex) YYMM_Journal_Title")
 parser.add_argument("--equation_color", type=str, default="", help="color of the equation")
+parser.add_argument("--threshold_num", type=int, default=5, help="threshold number of retries")
 args = parser.parse_args()
 
 with open(args.configs_path, "r", encoding="utf-8") as configs_file:
     configs = json.load(configs_file)
 
 # Define client
-client = genai.Client()
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 # check input folder
 main_root = os.path.join(args.inputs_root, "main")
@@ -116,27 +118,35 @@ for main_paper_name in main_paper_names:
     identifiers_main = list(q_dict_en_main.keys())
     identifiers_main.sort()
 
-    history = [{"role": "user", "parts": [""]}]
+    chat_session = None
     for i, identifier_main in enumerate(tqdm(identifiers_main, desc=file_name + "-main")):
-        # make history (append file to chat)
-        if i in split_history_nums:
-            history = make_history(main_file)
-
-        # ask explainer
         question = q_dict_en_main[identifier_main]
-        chat_session = client.chats.create(
-            model=configs["Explainer"]["model_name"],
-            config=types.GenerateContentConfig(
-                system_instruction=explainer_instructions,
-                temperature=configs["Explainer"]["configs"]["temperature"],
-                top_p=configs["Explainer"]["configs"]["top_p"],
-                top_k=configs["Explainer"]["configs"]["top_k"],
-                max_output_tokens=configs["Explainer"]["configs"]["max_output_tokens"],
-                response_mime_type=configs["Explainer"]["configs"]["response_mime_type"],
-            ),
-            history=history,
-        )
-        answer_en_origin = get_answer_from_chat(chat_session, question)
+
+        if i in split_history_nums:
+            contents = [main_file, question]
+
+            # ask explainer
+            chat_session = client.chats.create(
+                model=configs["Explainer"]["model_name"],
+                config=types.GenerateContentConfig(
+                    system_instruction=explainer_instructions,
+                    thinking_config=types.ThinkingConfig(
+                        include_thoughts=True,
+                    ),
+                    temperature=configs["Explainer"]["configs"]["temperature"],
+                    top_p=configs["Explainer"]["configs"]["top_p"],
+                    top_k=configs["Explainer"]["configs"]["top_k"],
+                    max_output_tokens=configs["Explainer"]["configs"]["max_output_tokens"],
+                    response_mime_type=configs["Explainer"]["configs"]["response_mime_type"],
+                ),
+            )
+        else:
+            contents = question
+
+        if chat_session is not None:
+            answer_en_origin = get_answer_from_chat(chat_session, contents, args.threshold_num)
+        else:
+            raise ValueError("chat_session is None")
 
         # check if the answer is recitation
         if answer_en_origin == "RECITATION":
@@ -145,10 +155,6 @@ for main_paper_name in main_paper_names:
                 f.write(f"{question}\n")
                 f.write("--------------------\n")
         else:
-            # append history (append answer to chat)
-            history = append_history(history, question, "user")
-            history = append_history(history, answer_en_origin, "model")
-
             # replace answer in result_en
             answer_en = replace_equation(answer_en_origin, args.equation_color)
             result_en = result_en.replace(identifier_main, answer_en)
@@ -156,7 +162,7 @@ for main_paper_name in main_paper_names:
                 output_file.write(result_en)
 
             # ask translator
-            answer_ko = get_answer_from_model(client, answer_en_origin, configs)
+            answer_ko = get_answer_from_model(client, answer_en_origin, configs, args.threshold_num)
 
             # replace answer in result_ko
             answer_ko = replace_equation(answer_ko, args.equation_color)
@@ -171,24 +177,26 @@ for main_paper_name in main_paper_names:
         identifiers_supple = list(q_dict_en_supple.keys())
         identifiers_supple.sort()
 
-        # make history for supplemental materials (append file to chat)
-        history = make_history(supple_file)
-        for identifier_supple in tqdm(identifiers_supple, desc=file_name + "-supple"):
+        for i, identifier_supple in enumerate(tqdm(identifiers_supple, desc=file_name + "-supple")):
             # ask explainer
             question = q_dict_en_supple[identifier_supple]
-            chat_session = client.chats.create(
-                model=configs["Explainer"]["model_name"],
-                config=types.GenerateContentConfig(
-                    system_instruction=explainer_instructions,
-                    temperature=configs["Explainer"]["configs"]["temperature"],
-                    top_p=configs["Explainer"]["configs"]["top_p"],
-                    top_k=configs["Explainer"]["configs"]["top_k"],
-                    max_output_tokens=configs["Explainer"]["configs"]["max_output_tokens"],
-                    response_mime_type=configs["Explainer"]["configs"]["response_mime_type"],
-                ),
-                history=history,
-            )
-            answer_en_origin = get_answer_from_chat(chat_session, question)
+            if i == 0:
+                contents = [supple_file, question]
+                chat_session = client.chats.create(
+                    model=configs["Explainer"]["model_name"],
+                    config=types.GenerateContentConfig(
+                        system_instruction=explainer_instructions,
+                        temperature=configs["Explainer"]["configs"]["temperature"],
+                        top_p=configs["Explainer"]["configs"]["top_p"],
+                        top_k=configs["Explainer"]["configs"]["top_k"],
+                        max_output_tokens=configs["Explainer"]["configs"]["max_output_tokens"],
+                        response_mime_type=configs["Explainer"]["configs"]["response_mime_type"],
+                    ),
+                )
+            else:
+                contents = question
+
+            answer_en_origin = get_answer_from_chat(chat_session, contents, args.threshold_num)
 
             # check if the answer is recitation
             if answer_en_origin == "RECITATION":
@@ -197,10 +205,6 @@ for main_paper_name in main_paper_names:
                     f.write(f"{question}\n")
                     f.write("--------------------\n")
             else:
-                # append history (append answer to chat)
-                history = append_history(history, question, "user")
-                history = append_history(history, answer_en_origin, "model")
-
                 # replace answer in result_en
                 answer_en = replace_equation(answer_en_origin, args.equation_color)
                 result_en = result_en.replace(identifier_supple, answer_en)
@@ -208,7 +212,7 @@ for main_paper_name in main_paper_names:
                     output_file.write(result_en)
 
                 # ask translator
-                answer_ko = get_answer_from_model(client, answer_en_origin, configs)
+                answer_ko = get_answer_from_model(client, answer_en_origin, configs, args.threshold_num)
 
                 # replace answer in result_ko
                 answer_ko = replace_equation(answer_ko, args.equation_color)
